@@ -2,7 +2,6 @@ FROM debian:bookworm
 
 RUN apt upgrade -y && \
     apt install -y nginx && openssl \
-    apt clean && \
     rm -rf /var/lib/apt/lists/*
 
 RUN openssl req -x509 -nodes -days 365 \
