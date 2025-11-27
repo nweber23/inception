@@ -8,8 +8,8 @@ RUN sed -i 's|listen = /run/php/php8.3-fpm.sock|listen = 9000|' /etc/php/8.3/fpm
 
 RUN mkdir -p /var/www/html
 
-COPY ./setup.sh usr/local/bin/setup.sh
-RUN chmod +x usr/local/bin/setup.sh
+COPY ./setup.sh /usr/local/bin/setup.sh
+RUN chmod +x /usr/local/bin/setup.sh
 
 EXPOSE 9000
 
