@@ -6,22 +6,22 @@ all: up
 up:
 	@mkdir -p /home/nweber/data/mariadb
 	@mkdir -p /home/nweber/data/wordpress
-	docker-compose -f $(DOCKER_COMPOSE_FILE) up -d --build
+	docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 
 down:
-	docker-compose -f $(DOCKER_COMPOSE_FILE) down
+	docker compose -f $(DOCKER_COMPOSE_FILE) down
 
 start:
-	docker-compose -f $(DOCKER_COMPOSE_FILE) start
+	docker compose -f $(DOCKER_COMPOSE_FILE) start
 
 stop:
-	docker-compose -f $(DOCKER_COMPOSE_FILE) stop
+	docker compose -f $(DOCKER_COMPOSE_FILE) stop
 
 restart:
-	docker-compose -f $(DOCKER_COMPOSE_FILE) restart
+	docker compose -f $(DOCKER_COMPOSE_FILE) restart
 
 logs:
-	docker-compose -f $(DOCKER_COMPOSE_FILE) logs -f
+	docker compose -f $(DOCKER_COMPOSE_FILE) logs -f
 
 clean: down
 	docker system prune -af
