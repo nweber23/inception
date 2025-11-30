@@ -13,4 +13,4 @@ RUN chmod +x /usr/local/bin/setup.sh
 
 EXPOSE 9000
 
-CMD ["php-fpm8.2", "-F"]
+ENTRYPOINT ["/usr/local/bin/setup.sh"]
