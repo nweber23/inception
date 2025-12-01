@@ -10,34 +10,33 @@ service mariadb start
 
 # Wait for MariaDB to be ready
 echo "Waiting for MariaDB to be ready..."
-for i in {1..30}; do
-	if mariadbadmin ping &>/dev/null; then
-		echo "MariaDB is ready."
-		break
-	fi
-	if [ $i -eq 30 ]; then
-		echo "MariaDB did not become ready in time."
-		exit 1
-	fi
-	sleep 1
+until mysqladmin --protocol=socket --socket=/run/mysqld/mysqld.sock ping &>/dev/null; do
+    echo "MariaDB is not ready yet..."
+    sleep 2
 done
+echo "MariaDB is ready."
 
-# Check if database already exists
-if ! mariadb -e "SELECT 1;" &>/dev/null; then
-	echo "Setting up MariaDB database..."
-
-	mariadb <<-EOSQL
+# Initialize database and user idempotently
+echo "Configuring database and users (idempotent)..."
+if mariadb -u root -e "SELECT 1" &>/dev/null; then
+	echo "Root has no password yet; setting it and creating DB/user..."
+	mariadb -u root <<-EOSQL
 		ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 		CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
 		CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
 		GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
 		FLUSH PRIVILEGES;
-	EOSQL
-
-	echo "MariaDB setup completed."
+EOSQL
 else
-	echo "MariaDB database already exists, skipping setup."
+	echo "Root password set; ensuring DB/user exist..."
+	mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" <<-EOSQL
+		CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
+		CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+		GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+		FLUSH PRIVILEGES;
+EOSQL
 fi
+echo "MariaDB setup completed."
 
 # Stop MariaDB to restart it properly
 mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown 2>/dev/null || service mariadb stop || true
