@@ -5,7 +5,7 @@ set -e
 service mariadb start
 
 # Wait for MariaDB to be ready
-until mariadb -e "SELECT 1" &>/dev/null; do
+until mysqladmin ping &>/dev/null; do
     echo "Waiting for MariaDB to be ready..."
     sleep 1
 done
@@ -14,16 +14,13 @@ done
 if ! mariadb -e "USE ${MYSQL_DATABASE};" &>/dev/null; then
     echo "Setting up MariaDB database..."
 
-    # Secure installation
-    mariadb -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
-
-    # Create database
-    mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};"
-
-    # Create user and grant privileges
-    mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';"
-    mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';"
-    mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+    mariadb <<-EOSQL
+        ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+        CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
+        CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+        GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+        FLUSH PRIVILEGES;
+    EOSQL
 
     echo "MariaDB setup completed."
 else
