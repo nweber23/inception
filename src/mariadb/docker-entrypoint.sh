@@ -5,9 +5,20 @@ set -e
 mkdir -p /run/mysqld
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
+echo "Starting MariaDB server..."
+service mariadb start
+
 # Wait for MariaDB to be ready
-until mysqladmin ping &>/dev/null; do
-	echo "Waiting for MariaDB to be ready..."
+echo "Waiting for MariaDB to be ready..."
+for i in {1..30}; do
+	if mariadbadmin ping &>/dev/null; then
+		echo "MariaDB is ready."
+		break
+	fi
+	if [ $i -eq 30 ]; then
+		echo "MariaDB did not become ready in time."
+		exit 1
+	fi
 	sleep 1
 done
 
