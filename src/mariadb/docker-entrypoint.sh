@@ -11,7 +11,7 @@ until mysqladmin ping &>/dev/null; do
 done
 
 # Check if database already exists
-if ! mariadb -e "USE ${MYSQL_DATABASE};" &>/dev/null; then
+if ! mariadb -e "SELECT 1;" &>/dev/null; then
 	echo "Setting up MariaDB database..."
 
 	mariadb <<-EOSQL
@@ -28,7 +28,9 @@ else
 fi
 
 # Stop MariaDB to restart it properly
-service mariadb stop
+mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" shutdown 2>/dev/null || service mariadb stop || true
+
+sleep 1
 
 # Start MariaDB in foreground with network binding
 exec mariadbd --user=mysql --bind-address=0.0.0.0 --port=3306
