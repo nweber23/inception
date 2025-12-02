@@ -28,8 +28,17 @@ services:
       - "443:443"
     depends_on:
       - wordpress
+      - adminer
     volumes:
       - wordpress_data:/var/www/html
+    networks:
+      - inception
+
+  adminer:
+    build: ./adminer
+    container_name: adminer
+    depends_on:
+      - mariadb
     networks:
       - inception
 
@@ -39,4 +48,14 @@ networks:
 
 volumes:
   mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nweber/data/mariadb
   wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nweber/data/wordpress
