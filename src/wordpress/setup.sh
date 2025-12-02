@@ -1,16 +1,13 @@
 #!/bin/bash
 set -e
 
-# Ensure document root exists
 mkdir -p /var/www/html
 
-# Install WP-CLI if missing
 if ! command -v wp >/dev/null 2>&1; then
     curl -sS -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
     chmod +x /usr/local/bin/wp
 fi
 
-# Ensure WordPress core files exist so Nginx doesn't 403 on empty volume
 if [ ! -f /var/www/html/index.php ]; then
     echo "Bootstrapping WordPress core files..."
     (
@@ -19,7 +16,6 @@ if [ ! -f /var/www/html/index.php ]; then
     )
 fi
 
-# Wait for MariaDB to be ready (needed for config/install)
 echo "Waiting for MariaDB..."
 until mariadb -h mariadb -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "SELECT 1" &>/dev/null; do
     echo "MariaDB is unavailable - sleeping"
@@ -27,7 +23,6 @@ until mariadb -h mariadb -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "SELECT 1" &
 done
 echo "MariaDB is up and running!"
 
-# Configure and install WordPress if not already configured
 if [ ! -f /var/www/html/wp-config.php ]; then
     echo "Configuring and installing WordPress..."
 
@@ -55,10 +50,33 @@ if [ ! -f /var/www/html/wp-config.php ]; then
             --allow-root || echo "User already exists"
     fi
 
+    # Ensure direct filesystem writes and Redis config
+    wp --path=/var/www/html config set FS_METHOD direct --type=constant --allow-root
+    wp --path=/var/www/html config set WP_CACHE true --type=constant --raw --allow-root
+    wp --path=/var/www/html config set WP_REDIS_HOST redis --type=constant --allow-root
+    wp --path=/var/www/html config set WP_REDIS_PORT 6379 --type=constant --raw --allow-root
+    wp --path=/var/www/html config set WP_REDIS_CLIENT phpredis --type=constant --allow-root
+
+    wp --path=/var/www/html plugin install redis-cache --activate --force --allow-root || wp --path=/var/www/html plugin activate redis-cache --allow-root
+    wp --path=/var/www/html redis enable --allow-root || true
+
     echo "WordPress installation completed!"
 else
     echo "WordPress is already installed."
+
+    wp --path=/var/www/html config set FS_METHOD direct --type=constant --allow-root
+    wp --path=/var/www/html config set WP_CACHE true --type=constant --raw --allow-root
+    wp --path=/var/www/html config set WP_REDIS_HOST redis --type=constant --allow-root
+    wp --path=/var/www/html config set WP_REDIS_PORT 6379 --type=constant --raw --allow-root
+    wp --path=/var/www/html config set WP_REDIS_CLIENT phpredis --type=constant --allow-root
+    wp --path=/var/www/html plugin install redis-cache --activate --force --allow-root || wp --path=/var/www/html plugin activate redis-cache --allow-root
+    wp --path=/var/www/html redis enable --allow-root || true
 fi
+
+# Fix ownership/permissions so PHP-FPM (www-data) can write wp-content
+chown -R www-data:www-data /var/www/html
+find /var/www/html -type d -exec chmod 755 {} \;
+find /var/www/html -type f -exec chmod 644 {} \;
 
 # Start PHP-FPM
 exec php-fpm8.2 -F

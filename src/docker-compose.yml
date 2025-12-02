@@ -15,7 +15,10 @@ services:
     volumes:
       - wordpress_data:/var/www/html
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - inception
     env_file:
@@ -42,6 +45,14 @@ services:
     networks:
       - inception
 
+  redis:
+    build: ./redis
+    container_name: redis
+    networks:
+      - inception
+    volumes:
+      - redis_data:/data
+
 networks:
   inception:
     driver: bridge
@@ -59,3 +70,9 @@ volumes:
       type: none
       o: bind
       device: /home/nweber/data/wordpress
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/nweber/data/redis

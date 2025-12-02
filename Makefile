@@ -6,6 +6,7 @@ all: up
 up:
 	@mkdir -p /home/nweber/data/mariadb
 	@mkdir -p /home/nweber/data/wordpress
+	@mkdir -p /home/nweber/data/redis
 	docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 
 down:
