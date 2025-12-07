@@ -27,7 +27,7 @@ RUN openssl req -x509 -nodes -days 365 \
     -out /etc/ssl/certs/nginx-selfsigned.crt \
     -subj "/c=DE/st=Baden-wuerttemberg/l=Heilbronn/o=42/ou=student/cn=nweber.42.fr"
 
-COPY --from=builder /app/dist /usr/share/nginx/html/pyrenees
+COPY --from=builder /app/dist /usr/share/nginx/html/dog
 COPY ./default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 443

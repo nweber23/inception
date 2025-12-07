@@ -2,82 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Great Pyrenees Showcase</title>
+    <title>Random Dog Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A TypeScript-powered showcase site for the Great Pyrenees dog breed." />
+    <meta name="description" content="A site to view random dog pictures." />
     <link rel="stylesheet" href="assets/styles.css" />
   </head>
   <body>
     <header class="container header">
-      <h1>Great Pyrenees</h1>
+      <h1>Random Dog Generator</h1>
       <button id="themeToggle" class="btn" aria-label="Toggle theme">Dark mode</button>
     </header>
 
-    <section class="hero">
-      <div class="container">
-        <h2>Gentle Guardians of the Mountains</h2>
-        <p>Majestic, calm, and protective — meet the Great Pyrenees.</p>
-      </div>
-    </section>
-
     <main class="container">
-      <section id="about" class="card">
-        <h3>About the Breed</h3>
-        <p>
-          The Great Pyrenees, also known as the Pyrenean Mountain Dog, is a large working breed
-          historically used to guard flocks in the Pyrenees Mountains. They are known for their
-          thick, weather-resistant coats and steady, patient temperament.
-        </p>
-      </section>
-
-      <section id="temperament" class="card">
-        <h3>Temperament</h3>
-        <ul>
-          <li>Calm, confident, and independent</li>
-          <li>Affectionate with family; reserved with strangers</li>
-          <li>Protective instincts as natural guardians</li>
-        </ul>
-      </section>
-
-      <section id="care" class="card">
-        <h3>Care & Grooming</h3>
-        <ul>
-          <li>Regular brushing for their dense double coat</li>
-          <li>Daily exercise and mental stimulation</li>
-          <li>Early socialization and consistent training</li>
-        </ul>
-      </section>
-
-      <section id="history" class="card">
-        <h3>History</h3>
-        <p>
-          Originating in the Pyrenees Mountains, these dogs partnered with shepherds to protect
-          flocks from predators. Their calm vigilance and imposing presence made them legendary
-          livestock guardians.
-        </p>
-      </section>
-
       <section id="gallery" class="card">
         <h3>Gallery</h3>
-        <figure class="gallery">
-          <img id="galleryImage" alt="Great Pyrenees photo" />
-          <figcaption id="galleryCaption"></figcaption>
-        </figure>
         <div class="gallery-controls">
           <button class="btn" id="prev">Previous</button>
           <button class="btn" id="next">Next</button>
         </div>
-      </section>
-
-      <section id="facts" class="card">
-        <h3>Quick Facts</h3>
-        <p id="factText"></p>
-        <button class="btn" id="nextFact">Another fact</button>
+        <figure class="gallery">
+          <img id="galleryImage" alt="Random dog photo" />
+          <figcaption id="galleryCaption"></figcaption>
+        </figure>
       </section>
     </main>
 
     <footer class="container footer">
-      <small>Built with TypeScript • Served via Nginx</small>
+      <small>Powered by Dog CEO API • Served via Nginx</small>
     </footer>
 
     <script type="module" src="assets/main.js"></script>
