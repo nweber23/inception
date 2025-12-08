@@ -94,7 +94,4 @@ The `docker-compose.yml` defines named volumes that map directly to specific dir
 
 ### Persistence Behavior
 *   **`make down`**: Removes containers and networks, but **preserves** the data in the host directories.
-*   **`make fclean`**: Removes Docker volume definitions. However, because these are bind mounts, the actual files in `/home/nweber/data/` on the host **// filepath: DEV_DOC.md
-# Developer Documentation
-
-This documentation is intended for developers who wish to modify, debug, or understand the internal workings of the Inception infrastructure.
+*   **`make fclean`**: Removes Docker volume definitions. However, because these are bind mounts, the actual files in `/home/nweber/data/` on the host
