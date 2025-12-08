@@ -53,6 +53,21 @@ services:
     volumes:
       - redis_data:/data
 
+  ftp:
+    build: ./ftp
+    container_name: ftp
+    depends_on:
+      - wordpress
+    networks:
+      - inception
+    env_file:
+      - ../secret/.env
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes:
+      - wordpress_data:/var/www/html
+
 networks:
   inception:
     driver: bridge
