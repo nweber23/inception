@@ -13,6 +13,7 @@ The infrastructure includes:
 *   **Redis**: An in-memory data structure store used as a cache for WordPress.
 *   **Adminer**: A lightweight database management tool.
 *   **Static Site**: A custom TypeScript-based "Random Dog Generator" served via Nginx.
+*   **FTP**: A vsftpd server to manage WordPress files via FTP (optional for legacy workflows).
 
 ## Instructions
 
@@ -36,6 +37,7 @@ The infrastructure includes:
     # Edit secret/.env with your specific passwords and usernames
     ```
     See [.env.example](.env.example) for the required variables.
+    FTP credentials are defined by `FTP_USER` and `FTP_PASSWORD` in [secret/.env](secret/.env).
 
 ### Execution
 
@@ -56,6 +58,7 @@ Once the containers are running, you can access the services at:
 *   **WordPress:** `https://nweber.42.fr`
 *   **Adminer:** `https://nweber.42.fr/adminer`
 *   **Static Site:** `https://nweber.42.fr/dog`
+*   **FTP:** Host `127.0.0.1`, Port `21`, Passive ports `30000–30009`. Use credentials from [secret/.env](secret/.env). The FTP root maps to WordPress files at `/var/www/html`.
 
 ### Cleanup
 
@@ -78,6 +81,7 @@ This project uses **Docker Compose** to orchestrate the services defined in [`sr
 *   **Nginx Reverse Proxy:** Nginx is the only container exposing ports (443) to the host. It routes traffic internally to WordPress (port 9000) or Adminer (port 8080) via the Docker network.
 *   **Multi-stage Build:** The static site in [`src/nginx/Dockerfile`](src/nginx/Dockerfile) uses a multi-stage build. It compiles TypeScript assets in a Node.js container before copying the static files to the final Nginx image, keeping the final image size small.
 *   **Resilience:** The `setup.sh` scripts (e.g., in [`src/wordpress/setup.sh`](src/wordpress/setup.sh)) are written to be idempotent, checking if configuration exists before attempting to write it, ensuring containers can restart without data loss or errors.
+*   **FTP Integration:** The `ftp` service in [`src/docker-compose.yml`](src/docker-compose.yml) exposes port 21 and passive range 30000–30009, and mounts the WordPress volume to allow uploads directly into `/var/www/html`. Config is in [`src/ftp/vsftpd.conf`](src/ftp/vsftpd.conf). For external exposure, enable TLS and firewall the passive ports.
 
 ### Technical Comparisons
 

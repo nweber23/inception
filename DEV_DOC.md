@@ -26,6 +26,7 @@ The project relies on environment variables for configuration and secrets. These
     Edit `secret/.env` to set your local development credentials.
     *   **Database**: `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`
     *   **WordPress**: `WORDPRESS_URL` (e.g., `nweber.42.fr`), `WORDPRESS_ADMIN_PASSWORD`, etc.
+    *   **FTP**: `FTP_USER`, `FTP_PASSWORD` used by the [`ftp`](src/docker-compose.yml) service.
 
 ### Host Configuration
 The project is configured to run on the domain `nweber.42.fr`. You must map this domain to your local machine.
@@ -95,3 +96,26 @@ The `docker-compose.yml` defines named volumes that map directly to specific dir
 ### Persistence Behavior
 *   **`make down`**: Removes containers and networks, but **preserves** the data in the host directories.
 *   **`make fclean`**: Removes Docker volume definitions. However, because these are bind mounts, the actual files in `/home/nweber/data/` on the host
+
+## 5. FTP Service (vsftpd)
+The FTP service is defined in [`src/docker-compose.yml`](src/docker-compose.yml) and built from:
+* [`src/ftp/Dockerfile`](src/ftp/Dockerfile)
+* [`src/ftp/vsftpd.conf`](src/ftp/vsftpd.conf)
+* [`src/ftp/docker-entrypoint.sh`](src/ftp/docker-entrypoint.sh)
+
+Behavior:
+* Passive mode ports: 30000–30009
+* Root: `/var/www/html` (mounted `wordpress_data` volume)
+* Users: provisioned from [secret/.env](secret/.env) via `FTP_USER`/`FTP_PASSWORD`
+
+Local demo (VS Code terminal):
+```sh
+make up
+# connect with any FTP client:
+# host: 127.0.0.1, port: 21, passive mode on
+# user/pass: from secret/.env
+```
+
+Security:
+* Current config has `ssl_enable=NO` in [`src/ftp/vsftpd.conf`](src/ftp/vsftpd.conf) for local dev.
+* For external use: enable TLS, restrict ports 21 and 30000–30009, and prefer SFTP if available.
