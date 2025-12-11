@@ -34,10 +34,10 @@ async function fetchRandomDog() {
   try {
     nextBtn.disabled = true;
     capEl.textContent = "Fetching a new friend...";
-    
+
     const res = await fetch("https://dog.ceo/api/breeds/image/random");
     const data: DogApiResponse = await res.json();
-    
+
     if (data.status === "success") {
       dogHistory.push(data.message);
       currentDogIndex = dogHistory.length - 1;
@@ -53,12 +53,19 @@ async function fetchRandomDog() {
   }
 }
 
+function showSecret(): void {
+  imgEl.src = "assets/fish-spin-sha.gif";
+  imgEl.alt = "Secret";
+  capEl.textContent = "You found the secret!";
+}
+
 function renderDog() {
   if (currentDogIndex >= 0 && currentDogIndex < dogHistory.length) {
     imgEl.src = dogHistory[currentDogIndex];
     imgEl.alt = "Random Dog";
     capEl.textContent = `Random Dog #${currentDogIndex + 1}`;
-    prevBtn.disabled = currentDogIndex === 0;
+    // Keep Prev enabled so users can try to go before the first image (to trigger the secret)
+    prevBtn.disabled = dogHistory.length === 0;
   }
 }
 
@@ -68,6 +75,9 @@ prevBtn?.addEventListener("click", () => {
   if (currentDogIndex > 0) {
     currentDogIndex--;
     renderDog();
+  } else {
+    // Trying to go to a negative amount of dog -> show the easter egg GIF
+    showSecret();
   }
 });
 

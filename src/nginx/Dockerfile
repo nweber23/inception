@@ -8,11 +8,14 @@ COPY ./site/tsconfig.json ./tsconfig.json
 COPY ./site/index.html ./index.html
 COPY ./site/styles.css ./styles.css
 COPY ./site/src ./src
+# include static assets (e.g., secret GIF)
+COPY ./site/assets ./assets
 
 RUN npm run build && \
     mkdir -p dist/assets && \
     cp index.html dist/index.html && \
-    cp styles.css dist/assets/styles.css
+    cp styles.css dist/assets/styles.css && \
+    cp -r assets/. dist/assets/
 
 FROM debian:bookworm
 
