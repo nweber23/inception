@@ -1,5 +1,5 @@
 {
-  "name": "great-pyrenees-showcase",
+  "name": "dog",
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.json"
