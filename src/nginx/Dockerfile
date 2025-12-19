@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.22 AS builder
 WORKDIR /app
 
 COPY ./site/package*.json ./
@@ -8,7 +8,6 @@ COPY ./site/tsconfig.json ./tsconfig.json
 COPY ./site/index.html ./index.html
 COPY ./site/styles.css ./styles.css
 COPY ./site/src ./src
-# include static assets (e.g., secret GIF)
 COPY ./site/assets ./assets
 
 RUN npm run build && \
