@@ -1,5 +1,5 @@
 NAME = inception
-DOCKER_COMPOSE_FILE = ./src/docker-compose.yml
+DOCKER_COMPOSE_FILE = ./srcs/docker-compose.yml
 
 all: up
 
