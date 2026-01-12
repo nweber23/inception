@@ -1,32 +1,39 @@
 #!/bin/bash
-# Exit on error, unset variables, and pipe failures
+# Exit immediately if a command exits with a non-zero status
+# Treat unset variables as an error
+# Fail on pipe errors
 set -euo pipefail
 
-# Load FTP credentials from environment variables (with defaults)
-# These come from secret/.env file
+# Set FTP user and password from environment variables or use defaults
 FTP_USER="${FTP_USER:-ftpuser}"
 FTP_PASSWORD="${FTP_PASSWORD:-changeme}"
 
-# Create or modify FTP user account
+# Ensure www-data group exists (should already exist from base image)
+# This group is used by web servers like Nginx and PHP-FPM
+getent group www-data >/dev/null || groupadd -r www-data
+
+# Check if the FTP user already exists
 if id "$FTP_USER" >/dev/null 2>&1; then
-  # User exists, update home directory
+  # If user exists, update their home directory
   usermod -d /home/"$FTP_USER" "$FTP_USER" || true
 else
-  # User doesn't exist, create new user
+  # If user doesn't exist, create it with:
   # -m: create home directory
-  # -d: specify home directory path
-  # -s /bin/bash: set default shell
+  # -d: set home directory path
+  # -s: set login shell
   useradd -m -d /home/"$FTP_USER" -s /bin/bash "$FTP_USER"
 fi
 
-# Set user password using chpasswd (reads user:password format from stdin)
+# Set the FTP user's password
 echo "$FTP_USER:$FTP_PASSWORD" | chpasswd
+
+# Add FTP user to www-data group for WordPress write access
+# This allows the FTP user to write to files owned by www-data
+usermod -a -G www-data "$FTP_USER"
 
 # Set ownership of FTP user's home directory
 chown -R "$FTP_USER":"$FTP_USER" /home/"$FTP_USER"
-# Note: WordPress volume (/var/www/html) stays owned by www-data
-# vsftpd will allow writes if file permissions permit
 
 # Start vsftpd FTP server in foreground mode
-# exec replaces shell with vsftpd process (PID 1 for proper Docker signals)
+# exec replaces the shell process with vsftpd
 exec /usr/sbin/vsftpd /etc/vsftpd.conf

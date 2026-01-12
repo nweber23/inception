@@ -1,32 +1,30 @@
 #!/bin/bash
-# Exit immediately if any command fails
+# Exit immediately if a command exits with a non-zero status
 set -e
 
 # Create WordPress root directory if it doesn't exist
 mkdir -p /var/www/html
 
-# Check if WP-CLI is installed, download if not
+# Check if WP-CLI (WordPress Command Line Interface) is installed
 if ! command -v wp >/dev/null 2>&1; then
-    # Download WP-CLI (WordPress command-line interface) from official repository
+    # Download WP-CLI from official repository
     curl -sS -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
     # Make WP-CLI executable
     chmod +x /usr/local/bin/wp
 fi
 
-# Check if WordPress core files are already downloaded
+# Check if WordPress core files are already present
 if [ ! -f /var/www/html/index.php ]; then
     echo "Bootstrapping WordPress core files..."
-    # Run in subshell to avoid changing current directory
+    # Download WordPress core files using WP-CLI
     (
         cd /var/www/html
-        # Download latest WordPress core files
         wp core download --allow-root
     )
 fi
 
+# Wait for MariaDB to be ready before proceeding
 echo "Waiting for MariaDB..."
-# Wait for MariaDB to be available before proceeding
-# -h mariadb: connect to MariaDB service by Docker service name
 until mariadb -h mariadb -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "SELECT 1" &>/dev/null; do
     echo "MariaDB is unavailable - sleeping"
     sleep 3
@@ -37,7 +35,7 @@ echo "MariaDB is up and running!"
 if [ ! -f /var/www/html/wp-config.php ]; then
     echo "Configuring and installing WordPress..."
 
-    # Create wp-config.php with database connection details
+    # Create wp-config.php with database credentials
     wp --path=/var/www/html config create \
         --dbname="${MYSQL_DATABASE}" \
         --dbuser="${MYSQL_USER}" \
@@ -45,7 +43,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --dbhost="mariadb" \
         --allow-root
 
-    # Install WordPress and create admin user
+    # Install WordPress with site configuration
     wp --path=/var/www/html core install \
         --url="${WORDPRESS_URL}" \
         --title="${WORDPRESS_TITLE}" \
@@ -54,7 +52,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --admin_email="${WORDPRESS_ADMIN_EMAIL}" \
         --allow-root
 
-    # Create additional non-admin user if specified in environment
+    # Create additional WordPress user if specified
     if [ -n "${WORDPRESS_USER}" ]; then
         wp --path=/var/www/html user create \
             "${WORDPRESS_USER}" \
@@ -64,45 +62,47 @@ if [ ! -f /var/www/html/wp-config.php ]; then
             --allow-root || echo "User already exists"
     fi
 
-    # Configure WordPress constants in wp-config.php
-    # FS_METHOD=direct: Allow WordPress to write files directly (no FTP)
+    # Configure WordPress settings for FTP and Redis caching
+    # FS_METHOD=direct: Use direct filesystem access (no FTP for updates)
     wp --path=/var/www/html config set FS_METHOD direct --type=constant --allow-root
-    # WP_CACHE=true: Enable object caching
+    # Enable WordPress cache
     wp --path=/var/www/html config set WP_CACHE true --type=constant --raw --allow-root
-    # WP_REDIS_HOST: Redis server hostname (Docker service name)
+    # Configure Redis connection settings
     wp --path=/var/www/html config set WP_REDIS_HOST redis --type=constant --allow-root
-    # WP_REDIS_PORT: Redis port number
     wp --path=/var/www/html config set WP_REDIS_PORT 6379 --type=constant --raw --allow-root
-    # WP_REDIS_CLIENT: Use phpredis extension for Redis connection
     wp --path=/var/www/html config set WP_REDIS_CLIENT phpredis --type=constant --allow-root
 
     # Install and activate Redis object cache plugin
     wp --path=/var/www/html plugin install redis-cache --activate --force --allow-root || wp --path=/var/www/html plugin activate redis-cache --allow-root
-    # Enable Redis object caching
+    # Enable Redis cache integration
     wp --path=/var/www/html redis enable --allow-root || true
 
     echo "WordPress installation completed!"
 else
+    # If WordPress is already installed, update configuration
     echo "WordPress is already installed."
-
-    # Ensure Redis configuration is set (idempotent for container restarts)
+    # Reapply WordPress settings (in case of container restart)
     wp --path=/var/www/html config set FS_METHOD direct --type=constant --allow-root
     wp --path=/var/www/html config set WP_CACHE true --type=constant --raw --allow-root
     wp --path=/var/www/html config set WP_REDIS_HOST redis --type=constant --allow-root
     wp --path=/var/www/html config set WP_REDIS_PORT 6379 --type=constant --raw --allow-root
     wp --path=/var/www/html config set WP_REDIS_CLIENT phpredis --type=constant --allow-root
-    # Ensure Redis plugin is activated
-    wp --path=/var/www/html plugin install redis-cache --activate --force --allow-root || wp --path=/var/www/html plugin activate redis-cache --allow-root
+    wp --path=/var/www/html plugin install redis-cache --activate --force --allow-root || wp --path=/var//html plugin activate redis-cache --allow-root
     wp --path=/var/www/html redis enable --allow-root || true
 fi
 
-# Set correct ownership for PHP-FPM user (www-data)
+# Set ownership of all WordPress files to www-data user and group
+# www-data is the user that runs Nginx and PHP-FPM
 chown -R www-data:www-data /var/www/html
-# Set directory permissions to 755 (rwxr-xr-x)
-find /var/www/html -type d -exec chmod 755 {} \;
-# Set file permissions to 644 (rw-r--r--)
-find /var/www/html -type f -exec chmod 644 {} \;
+
+# Make all directories group-writable (775 = rwxrwxr-x)
+# This allows the www-data group (including FTP users) to write to directories
+find /var/www/html -type d -exec chmod 775 {} \;
+
+# Make all files group-writable (664 = rw-rw-r--)
+# This allows the www-data group (including FTP users) to modify files
+find /var/www/html -type f -exec chmod 664 {} \;
 
 # Start PHP-FPM in foreground mode
-# -F: Run in foreground (so Docker keeps container running)
+# exec replaces the shell process with PHP-FPM
 exec php-fpm8.2 -F
